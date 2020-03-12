@@ -16,12 +16,12 @@
 
 #include <limits.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "KAssert.h"
 #include "Exceptions.h"
+#include "KAssert.h"
 #include "Memory.h"
 #include "Natives.h"
 #include "Types.h"
@@ -34,8 +34,8 @@ KBoolean Kotlin_Any_equals(KConstRef thiz, KConstRef other) {
 }
 
 KInt Kotlin_Any_hashCode(KConstRef thiz) {
-  // Here we will use different mechanism for stable hashcode, using meta-objects
-  // if moving collector will be used.
+  // Here we will use different mechanism for stable hashcode, using
+  // meta-objects if moving collector will be used.
   return reinterpret_cast<uintptr_t>(thiz);
 }
 

@@ -18,31 +18,32 @@
 
 #if KONAN_OBJC_INTEROP
 
-#import <objc/runtime.h>
 #import <CoreFoundation/CFString.h>
 #import <Foundation/NSException.h>
 #import <Foundation/NSString.h>
+#import <objc/runtime.h>
 #import "Memory.h"
 #import "ObjCInteropUtilsPrivate.h"
 
 namespace {
-  Class nsStringClass = nullptr;
+Class nsStringClass = nullptr;
 
-  Class getNSStringClass() {
-    Class result = nsStringClass;
-    if (result == nullptr) {
-      // Lookup dynamically to avoid direct reference to Foundation:
-      result = objc_getClass("NSString");
-      RuntimeAssert(result != nullptr, "NSString class not found");
-      nsStringClass = result;
-    }
-    return result;
+Class getNSStringClass() {
+  Class result = nsStringClass;
+  if (result == nullptr) {
+    // Lookup dynamically to avoid direct reference to Foundation:
+    result = objc_getClass("NSString");
+    RuntimeAssert(result != nullptr, "NSString class not found");
+    nsStringClass = result;
   }
+  return result;
+}
 
-  // Note: using @"foo" string literals leads to linkage dependency on frameworks.
-  NSString* cStringToNS(const char* str) {
-    return [getNSStringClass() stringWithCString:str encoding:NSUTF8StringEncoding];
-  }
+// Note: using @"foo" string literals leads to linkage dependency on frameworks.
+NSString* cStringToNS(const char* str) {
+  return [getNSStringClass() stringWithCString:str
+                                      encoding:NSUTF8StringEncoding];
+}
 }
 
 extern "C" {
@@ -70,34 +71,37 @@ OBJ_GETTER(Kotlin_Interop_CreateKStringFromNSString, NSString* str) {
     RETURN_OBJ(nullptr);
   }
 
-  CFStringRef immutableCopyOrSameStr = CFStringCreateCopy(nullptr, (CFStringRef)str);
+  CFStringRef immutableCopyOrSameStr =
+      CFStringCreateCopy(nullptr, (CFStringRef)str);
 
   auto length = CFStringGetLength(immutableCopyOrSameStr);
   CFRange range = {0, length};
-  ArrayHeader* result = AllocArrayInstance(theStringTypeInfo, length, OBJ_RESULT)->array();
+  ArrayHeader* result =
+      AllocArrayInstance(theStringTypeInfo, length, OBJ_RESULT)->array();
   KChar* rawResult = CharArrayAddressOfElementAt(result, 0);
 
   CFStringGetCharacters(immutableCopyOrSameStr, range, rawResult);
 
-  result->obj()->meta_object()->associatedObject_ = (void*)immutableCopyOrSameStr;
+  result->obj()->meta_object()->associatedObject_ =
+      (void*)immutableCopyOrSameStr;
 
   RETURN_OBJ(result->obj());
 }
 
 // Note: this body is used for init methods with signatures differing from this;
-// it is correct on arm64 and x86_64, because the body uses only the first two arguments which are fixed,
-// and returns pointers.
+// it is correct on arm64 and x86_64, because the body uses only the first two
+// arguments which are fixed, and returns pointers.
 id MissingInitImp(id self, SEL _cmd) {
   const char* className = object_getClassName(self);
-  [self release]; // Since init methods receive ownership on the receiver.
+  [self release];  // Since init methods receive ownership on the receiver.
 
   // Lookup dynamically to avoid direct reference to Foundation:
   Class nsExceptionClass = objc_getClass("NSException");
   RuntimeAssert(nsExceptionClass != nullptr, "NSException class not found");
 
   [nsExceptionClass raise:cStringToNS("Initializer is not implemented")
-    format:cStringToNS("%s is not implemented in %s"),
-    sel_getName(_cmd), className];
+                   format:cStringToNS("%s is not implemented in %s"),
+                          sel_getName(_cmd), className];
 
   return nullptr;
 }
@@ -114,9 +118,11 @@ KRef Kotlin_Interop_unwrapKotlinObjectHolder(id holder) {
   return Kotlin_Interop_unwrapKotlinObjectHolder_ptr(holder);
 }
 
-KBoolean Kotlin_Interop_DoesObjectConformToProtocol(id obj, void* prot, KBoolean isMeta) {
+KBoolean Kotlin_Interop_DoesObjectConformToProtocol(id obj, void* prot,
+                                                    KBoolean isMeta) {
   BOOL objectIsClass = class_isMetaClass(object_getClass(obj));
-  if ((isMeta && !objectIsClass) || (!isMeta && objectIsClass)) return false;
+  if ((isMeta && !objectIsClass) || (!isMeta && objectIsClass))
+    return false;
   // TODO: handle root classes properly.
 
   return [((id<NSObject>)obj) conformsToProtocol:(Protocol*)prot];
@@ -137,9 +143,9 @@ void Konan_ObjCInterop_initWeakReference(KRef ref, id objcPtr) {
   Konan_ObjCInterop_initWeakReference_ptr(ref, objcPtr);
 }
 
-} // extern "C"
+}  // extern "C"
 
-#else // KONAN_OBJC_INTEROP
+#else  // KONAN_OBJC_INTEROP
 
 extern "C" {
 
@@ -162,7 +168,7 @@ KRef Kotlin_Interop_unwrapKotlinObjectHolder(void* holder) {
   RuntimeAssert(false, "Objective-C interop is disabled");
   return nullptr;
 }
-  
+
 OBJ_GETTER(Konan_ObjCInterop_getWeakReference, KRef ref) {
   RuntimeAssert(false, "Objective-C interop is disabled");
   RETURN_OBJ(nullptr);
@@ -172,6 +178,6 @@ void Konan_ObjCInterop_initWeakReference(KRef ref, void* objcPtr) {
   RuntimeAssert(false, "Objective-C interop is disabled");
 }
 
-} // extern "C"
+}  // extern "C"
 
-#endif // KONAN_OBJC_INTEROP
+#endif  // KONAN_OBJC_INTEROP

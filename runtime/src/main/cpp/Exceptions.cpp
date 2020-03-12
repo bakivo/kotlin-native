@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 
 #include <exception>
 
@@ -31,18 +31,18 @@
 // Glibc backtrace() function.
 #include <execinfo.h>
 #endif
-#endif // OMIT_BACKTRACE
+#endif  // OMIT_BACKTRACE
 
-#include "KAssert.h"
 #include "Exceptions.h"
 #include "ExecFormat.h"
+#include "KAssert.h"
+#include "KString.h"
 #include "Memory.h"
 #include "Natives.h"
-#include "KString.h"
+#include "ObjCExceptions.h"
 #include "SourceInfo.h"
 #include "Types.h"
 #include "Utils.h"
-#include "ObjCExceptions.h"
 
 namespace {
 
@@ -61,13 +61,14 @@ struct Backtrace {
     if (size < 0) {
       size = 0;
     }
-    auto result = AllocArrayInstance(theNativePtrArrayTypeInfo, size, arrayHolder.slot());
+    auto result =
+        AllocArrayInstance(theNativePtrArrayTypeInfo, size, arrayHolder.slot());
     // TODO: throw cached OOME?
     RuntimeCheck(result != nullptr, "Cannot create backtrace array");
   }
 
   void setNextElement(_Unwind_Ptr element) {
-    Kotlin_NativePtrArray_set(obj(), index++, (KNativePtr) element);
+    Kotlin_NativePtrArray_set(obj(), index++, (KNativePtr)element);
   }
 
   ObjHeader* obj() { return arrayHolder.obj(); }
@@ -77,15 +78,14 @@ struct Backtrace {
   ObjHolder arrayHolder;
 };
 
-_Unwind_Reason_Code depthCountCallback(
-    struct _Unwind_Context * context, void* arg) {
+_Unwind_Reason_Code depthCountCallback(struct _Unwind_Context* context,
+                                       void* arg) {
   int* result = reinterpret_cast<int*>(arg);
   (*result)++;
   return _URC_NO_REASON;
 }
 
-_Unwind_Reason_Code unwindCallback(
-    struct _Unwind_Context* context, void* arg) {
+_Unwind_Reason_Code unwindCallback(struct _Unwind_Context* context, void* arg) {
   Backtrace* backtrace = reinterpret_cast<Backtrace*>(arg);
   if (backtrace->skipCount > 0) {
     backtrace->skipCount--;
@@ -113,7 +113,8 @@ NO_INLINE OBJ_GETTER0(Kotlin_getCurrentStackTrace) {
 #if OMIT_BACKTRACE
   return AllocArrayInstance(theNativePtrArrayTypeInfo, 0, OBJ_RESULT);
 #else
-  // Skips first 2 elements as irrelevant: this function and primary Throwable constructor.
+  // Skips first 2 elements as irrelevant: this function and primary Throwable
+  // constructor.
   constexpr int kSkipFrames = 2;
 #if USE_GCC_UNWIND
   int depth = 0;
@@ -129,10 +130,11 @@ NO_INLINE OBJ_GETTER0(Kotlin_getCurrentStackTrace) {
 
   int size = backtrace(buffer, maxSize);
   if (size < kSkipFrames)
-      return AllocArrayInstance(theNativePtrArrayTypeInfo, 0, OBJ_RESULT);
+    return AllocArrayInstance(theNativePtrArrayTypeInfo, 0, OBJ_RESULT);
 
   ObjHolder resultHolder;
-  ObjHeader* result = AllocArrayInstance(theNativePtrArrayTypeInfo, size - kSkipFrames, resultHolder.slot());
+  ObjHeader* result = AllocArrayInstance(
+      theNativePtrArrayTypeInfo, size - kSkipFrames, resultHolder.slot());
   for (int index = kSkipFrames; index < size; ++index) {
     Kotlin_NativePtrArray_set(result, index - kSkipFrames, buffer[index]);
   }
@@ -151,37 +153,47 @@ OBJ_GETTER(GetStackTraceStrings, KConstRef stackTrace) {
 #else
   uint32_t size = stackTrace->array()->count_;
   ObjHolder resultHolder;
-  ObjHeader* strings = AllocArrayInstance(theArrayTypeInfo, size, resultHolder.slot());
+  ObjHeader* strings =
+      AllocArrayInstance(theArrayTypeInfo, size, resultHolder.slot());
 #if USE_GCC_UNWIND
   for (int index = 0; index < size; ++index) {
     KNativePtr address = Kotlin_NativePtrArray_get(stackTrace, index);
     char symbol[512];
-    if (!AddressToSymbol((const void*) address, symbol, sizeof(symbol))) {
+    if (!AddressToSymbol((const void*)address, symbol, sizeof(symbol))) {
       // Make empty string:
       symbol[0] = '\0';
     }
     char line[512];
-    konan::snprintf(line, sizeof(line) - 1, "%s (%p)", symbol, (void*)(intptr_t)address);
+    konan::snprintf(line, sizeof(line) - 1, "%s (%p)", symbol,
+                    (void*)(intptr_t)address);
     ObjHolder holder;
     CreateStringFromCString(line, holder.slot());
-    UpdateHeapRef(ArrayAddressOfElementAt(strings->array(), index), holder.obj());
+    UpdateHeapRef(ArrayAddressOfElementAt(strings->array(), index),
+                  holder.obj());
   }
 #else
   if (size > 0) {
-    char **symbols = backtrace_symbols(PrimitiveArrayAddressOfElementAt<KNativePtr>(stackTrace->array(), 0), size);
-    RuntimeCheck(symbols != nullptr, "Not enough memory to retrieve the stacktrace");
+    char** symbols = backtrace_symbols(
+        PrimitiveArrayAddressOfElementAt<KNativePtr>(stackTrace->array(), 0),
+        size);
+    RuntimeCheck(symbols != nullptr,
+                 "Not enough memory to retrieve the stacktrace");
 
     for (int index = 0; index < size; ++index) {
-      auto sourceInfo = Kotlin_getSourceInfo(*PrimitiveArrayAddressOfElementAt<KNativePtr>(stackTrace->array(), index));
+      auto sourceInfo =
+          Kotlin_getSourceInfo(*PrimitiveArrayAddressOfElementAt<KNativePtr>(
+              stackTrace->array(), index));
       const char* symbol = symbols[index];
       const char* result;
       char line[1024];
       if (sourceInfo.fileName != nullptr) {
         if (sourceInfo.lineNumber != -1) {
-          konan::snprintf(line, sizeof(line) - 1, "%s (%s:%d:%d)",
-                          symbol, sourceInfo.fileName, sourceInfo.lineNumber, sourceInfo.column);
+          konan::snprintf(line, sizeof(line) - 1, "%s (%s:%d:%d)", symbol,
+                          sourceInfo.fileName, sourceInfo.lineNumber,
+                          sourceInfo.column);
         } else {
-          konan::snprintf(line, sizeof(line) - 1, "%s (%s:<unknown>)", symbol, sourceInfo.fileName);
+          konan::snprintf(line, sizeof(line) - 1, "%s (%s:<unknown>)", symbol,
+                          sourceInfo.fileName);
         }
         result = line;
       } else {
@@ -189,9 +201,11 @@ OBJ_GETTER(GetStackTraceStrings, KConstRef stackTrace) {
       }
       ObjHolder holder;
       CreateStringFromCString(result, holder.slot());
-      UpdateHeapRef(ArrayAddressOfElementAt(strings->array(), index), holder.obj());
+      UpdateHeapRef(ArrayAddressOfElementAt(strings->array(), index),
+                    holder.obj());
     }
-    // Not konan::free. Used to free memory allocated in backtrace_symbols where malloc is used.
+    // Not konan::free. Used to free memory allocated in backtrace_symbols where
+    // malloc is used.
     free(symbols);
   }
 #endif
@@ -200,8 +214,9 @@ OBJ_GETTER(GetStackTraceStrings, KConstRef stackTrace) {
 }
 
 void ThrowException(KRef exception) {
-  RuntimeAssert(exception != nullptr && IsInstance(exception, theThrowableTypeInfo),
-                "Throwing something non-throwable");
+  RuntimeAssert(
+      exception != nullptr && IsInstance(exception, theThrowableTypeInfo),
+      "Throwing something non-throwable");
 #if KONAN_NO_EXCEPTIONS
   PrintThrowable(exception);
   RuntimeCheck(false, "Exceptions unsupported");
@@ -211,15 +226,18 @@ void ThrowException(KRef exception) {
 }
 
 OBJ_GETTER(Kotlin_setUnhandledExceptionHook, KRef hook) {
-  RETURN_RESULT_OF(SwapHeapRefLocked,
-    &currentUnhandledExceptionHook, currentUnhandledExceptionHook, hook, &currentUnhandledExceptionHookLock,
-    &currentUnhandledExceptionHookCookie);
+  RETURN_RESULT_OF(SwapHeapRefLocked, &currentUnhandledExceptionHook,
+                   currentUnhandledExceptionHook, hook,
+                   &currentUnhandledExceptionHookLock,
+                   &currentUnhandledExceptionHookCookie);
 }
 
 void OnUnhandledException(KRef throwable) {
   ObjHolder handlerHolder;
-  auto* handler = SwapHeapRefLocked(&currentUnhandledExceptionHook, currentUnhandledExceptionHook, nullptr,
-     &currentUnhandledExceptionHookLock,  &currentUnhandledExceptionHookCookie, handlerHolder.slot());
+  auto* handler = SwapHeapRefLocked(
+      &currentUnhandledExceptionHook, currentUnhandledExceptionHook, nullptr,
+      &currentUnhandledExceptionHookLock, &currentUnhandledExceptionHookCookie,
+      handlerHolder.slot());
   if (handler == nullptr) {
     ReportUnhandledException(throwable);
   } else {
@@ -247,8 +265,9 @@ RUNTIME_NORETURN void TerminateWithUnhandledException(KRef throwable) {
   konan::abort();
 }
 
-// Some libstdc++-based targets has limited support for std::current_exception and other C++11 functions.
-// This restriction can be lifted later when toolchains will be updated.
+// Some libstdc++-based targets has limited support for std::current_exception
+// and other C++11 functions. This restriction can be lifted later when
+// toolchains will be updated.
 #if KONAN_HAS_CXX11_EXCEPTION_FUNCTIONS
 
 static void (*oldTerminateHandler)() = nullptr;
@@ -261,7 +280,8 @@ static void callOldTerminateHandler() {
   }
 #endif
 
-  RuntimeCheck(oldTerminateHandler != nullptr, "Underlying exception handler is not set.");
+  RuntimeCheck(oldTerminateHandler != nullptr,
+               "Underlying exception handler is not set.");
   oldTerminateHandler();
 }
 
@@ -285,21 +305,23 @@ static void KonanTerminateHandler() {
 static SimpleMutex konanTerminateHandlerInitializationMutex;
 
 void SetKonanTerminateHandler() {
-  if (oldTerminateHandler != nullptr) return; // Already initialized.
+  if (oldTerminateHandler != nullptr)
+    return;  // Already initialized.
 
   LockGuard<SimpleMutex> lockGuard(konanTerminateHandlerInitializationMutex);
 
-  if (oldTerminateHandler != nullptr) return; // Already initialized.
+  if (oldTerminateHandler != nullptr)
+    return;  // Already initialized.
 
   oldTerminateHandler = std::set_terminate(&KonanTerminateHandler);
 }
 
-#else // KONAN_OBJC_INTEROP
+#else  // KONAN_OBJC_INTEROP
 
 void SetKonanTerminateHandler() {
   // Nothing to do.
 }
 
-#endif // KONAN_OBJC_INTEROP
+#endif  // KONAN_OBJC_INTEROP
 
-} // extern "C"
+}  // extern "C"

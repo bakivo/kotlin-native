@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
+#include "Common.h"
 #include "KAssert.h"
 #include "Porting.h"
-#include "Common.h"
 
 #if KONAN_LINUX || KONAN_WINDOWS
 // This function replaces `__cxa_demangle` defined in GNU libstdc++
 // by adding `--defsym` flag in `konan.properties`.
-// This allows to avoid linking `__cxa_demangle` and its dependencies, thus reducing binary size.
+// This allows to avoid linking `__cxa_demangle` and its dependencies, thus
+// reducing binary size.
 RUNTIME_USED RUNTIME_WEAK extern "C" char* Konan_cxa_demangle(
-    const char* __mangled_name, char* __output_buffer,
-    size_t* __length, int* __status
-) {
-  *__status = -2; // __mangled_name is not a valid name under the C++ ABI mangling rules.
+    const char* __mangled_name, char* __output_buffer, size_t* __length,
+    int* __status) {
+  *__status = -2;  // __mangled_name is not a valid name under the C++ ABI
+                   // mangling rules.
   return nullptr;
 }
 
@@ -37,4 +38,4 @@ void __throw_length_error(const char* __s __attribute__((unused))) {
 
 }  // namespace std
 
-#endif // KONAN_LINUX || KONAN_WINDOWS
+#endif  // KONAN_LINUX || KONAN_WINDOWS

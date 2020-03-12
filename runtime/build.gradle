@@ -112,6 +112,19 @@ def clangFormatTargets = project.fileTree("src/main") {
     include '**/*.m'
     include '**/*.mm'
 
+    // TODO: Remove these:
+    exclude 'cpp/ExecFormat.cpp'
+    exclude 'cpp/KDebug.h'
+    exclude 'cpp/KString.cpp'
+    exclude 'cpp/KotlinMath.cpp'
+    exclude 'cpp/Memory.cpp'
+    exclude 'cpp/ObjCExport.mm'
+    exclude 'cpp/Operator.cpp'
+    exclude 'cpp/Porting.cpp'
+    exclude 'cpp/Regex.cpp'
+    exclude 'cpp/Runtime.cpp'
+    exclude 'cpp/Worker.cpp'
+
     exclude 'cpp/utf8.h' // part of external library
 }
 

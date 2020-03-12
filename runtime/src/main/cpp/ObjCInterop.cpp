@@ -16,11 +16,11 @@
 
 #if KONAN_OBJC_INTEROP
 
+#include <cstdint>
+#include <cstdio>
+#include <objc/message.h>
 #include <objc/objc.h>
 #include <objc/runtime.h>
-#include <objc/message.h>
-#include <cstdio>
-#include <cstdint>
 
 #include "Memory.h"
 #include "MemoryPrivate.hpp"
@@ -67,7 +67,7 @@ RUNTIME_NOTHROW const TypeInfo* GetObjCKotlinTypeInfo(ObjHeader* obj) {
   return GetKotlinClassData(clazz)->typeInfo;
 }
 
-id objc_msgSendSuper2(struct objc_super *super, SEL op, ...);
+id objc_msgSendSuper2(struct objc_super* super, SEL op, ...);
 
 static void DeallocImp(id self, SEL _cmd) {
   // TODO: doesn't support overriding Kotlin classes.
@@ -75,14 +75,16 @@ static void DeallocImp(id self, SEL _cmd) {
   RuntimeAssert(clazz != nullptr, "Must not be null");
 
   struct KotlinClassData* classData = GetKotlinClassData(clazz);
-  void* body = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(self) + classData->bodyOffset);
+  void* body = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(self) +
+                                       classData->bodyOffset);
 
   const TypeInfo* typeInfo = classData->typeInfo;
   DeinitInstanceBody(typeInfo, body);
 
   // Call super.dealloc:
   struct objc_super s = {self, clazz};
-  auto messenger = reinterpret_cast<void (*) (struct objc_super*, SEL _cmd)>(objc_msgSendSuper2);
+  auto messenger = reinterpret_cast<void (*)(struct objc_super*, SEL _cmd)>(
+      objc_msgSendSuper2);
   messenger(&s, _cmd);
 }
 
@@ -90,15 +92,20 @@ static void AddDeallocMethod(Class clazz) {
   Class nsObjectClass = Kotlin_Interop_getObjCClass("NSObject");
 
   SEL deallocSelector = sel_registerName("dealloc");
-  Method nsObjectDeallocMethod = class_getInstanceMethod(nsObjectClass, deallocSelector);
-  RuntimeAssert(nsObjectDeallocMethod != nullptr, "[NSObject dealloc] method not found");
+  Method nsObjectDeallocMethod =
+      class_getInstanceMethod(nsObjectClass, deallocSelector);
+  RuntimeAssert(nsObjectDeallocMethod != nullptr,
+                "[NSObject dealloc] method not found");
 
-  const char* nsObjectDeallocMethodTypeEncoding = method_getTypeEncoding(nsObjectDeallocMethod);
-  RuntimeAssert(nsObjectDeallocMethodTypeEncoding != nullptr, "[NSObject dealloc] method has no encoding provided");
+  const char* nsObjectDeallocMethodTypeEncoding =
+      method_getTypeEncoding(nsObjectDeallocMethod);
+  RuntimeAssert(nsObjectDeallocMethodTypeEncoding != nullptr,
+                "[NSObject dealloc] method has no encoding provided");
 
   // TODO: something of the above can be cached.
 
-  BOOL added = class_addMethod(clazz, deallocSelector, (IMP)DeallocImp, nsObjectDeallocMethodTypeEncoding);
+  BOOL added = class_addMethod(clazz, deallocSelector, (IMP)DeallocImp,
+                               nsObjectDeallocMethodTypeEncoding);
   RuntimeAssert(added, "Unable to add dealloc method to Objective-C class");
 }
 
@@ -130,10 +137,12 @@ struct KotlinObjCClassInfo {
   void** createdClass;
 };
 
-static void AddMethods(Class clazz, const struct ObjCMethodDescription* methods, int32_t methodsNum) {
+static void AddMethods(Class clazz, const struct ObjCMethodDescription* methods,
+                       int32_t methodsNum) {
   for (int32_t i = 0; i < methodsNum; ++i) {
     const struct ObjCMethodDescription* method = &methods[i];
-    BOOL added = class_addMethod(clazz, sel_registerName(method->selector), (IMP)method->imp, method->encoding);
+    BOOL added = class_addMethod(clazz, sel_registerName(method->selector),
+                                 (IMP)method->imp, method->encoding);
     RuntimeAssert(added == YES, "Unable to add method to Objective-C class");
   }
 }
@@ -146,11 +155,16 @@ static Class allocateClass(const KotlinObjCClassInfo* info) {
   size_t extraBytes = sizeof(struct KotlinClassData);
 
   if (info->exported) {
-    RuntimeCheck(info->name != nullptr, "exported Objective-C class must have a name");
+    RuntimeCheck(info->name != nullptr,
+                 "exported Objective-C class must have a name");
     Class result = objc_allocateClassPair(superclass, info->name, extraBytes);
-    if (result != nullptr) return result;
+    if (result != nullptr)
+      return result;
     // Similar to how Objective-C runtime handles this:
-    fprintf(stderr, "Class %s has multiple implementations. Which one will be used is undefined.\n", info->name);
+    fprintf(stderr,
+            "Class %s has multiple implementations. Which one will be used is "
+            "undefined.\n",
+            info->name);
   }
 
   KStdString className = Kotlin_ObjCInterop_getUniquePrefix();
@@ -164,7 +178,8 @@ static Class allocateClass(const KotlinObjCClassInfo* info) {
   int classId = anonymousClassNextId++;
   className += std::to_string(classId);
 
-  Class result = objc_allocateClassPair(superclass, className.c_str(), extraBytes);
+  Class result =
+      objc_allocateClassPair(superclass, className.c_str(), extraBytes);
   RuntimeCheck(result != nullptr, "Failed to allocate Objective-C class");
   return result;
 }
@@ -185,13 +200,16 @@ void* CreateKotlinObjCClass(const KotlinObjCClassInfo* info) {
 
   for (size_t i = 0;; ++i) {
     const char* protocolName = info->protocolNames[i];
-    if (protocolName == nullptr) break;
+    if (protocolName == nullptr)
+      break;
     Protocol* proto = objc_getProtocol(protocolName);
     if (proto != nullptr) {
       BOOL added = class_addProtocol(newClass, proto);
-      RuntimeAssert(added == YES, "Unable to add protocol to Objective-C class");
+      RuntimeAssert(added == YES,
+                    "Unable to add protocol to Objective-C class");
       added = class_addProtocol(newMetaclass, proto);
-      RuntimeAssert(added == YES, "Unable to add protocol to Objective-C metaclass");
+      RuntimeAssert(added == YES,
+                    "Unable to add protocol to Objective-C metaclass");
     }
   }
 
@@ -205,13 +223,15 @@ void* CreateKotlinObjCClass(const KotlinObjCClassInfo* info) {
 
   char bodyTypeEncoding[16];
   snprintf(bodyTypeEncoding, sizeof(bodyTypeEncoding), "[%dc]", info->bodySize);
-  BOOL added = class_addIvar(newClass, "kotlinBody", info->bodySize, /* log2(align) = */ 3, bodyTypeEncoding);
+  BOOL added = class_addIvar(newClass, "kotlinBody", info->bodySize,
+                             /* log2(align) = */ 3, bodyTypeEncoding);
   RuntimeAssert(added == YES, "Unable to add ivar to Objective-C class");
 
   objc_registerClassPair(newClass);
 
   Ivar body = class_getInstanceVariable(newClass, "kotlinBody");
-  RuntimeAssert(body != nullptr, "Unable to get ivar added to Objective-C class");
+  RuntimeAssert(body != nullptr,
+                "Unable to get ivar added to Objective-C class");
   int32_t offset = (int32_t)ivar_getOffset(body);
   GetKotlinClassData(newClass)->bodyOffset = offset;
   *info->bodyOffset = offset;
@@ -250,7 +270,7 @@ Class Kotlin_objc_lookUpClass(const char* name) {
   return objc_lookUpClass(name);
 }
 
-} // extern "C"
+}  // extern "C"
 
 #else  // KONAN_OBJC_INTEROP
 
@@ -286,6 +306,6 @@ void* Kotlin_objc_lookUpClass(const char* name) {
   return nullptr;
 }
 
-} // extern "C"
+}  // extern "C"
 
-#endif // KONAN_OBJC_INTEROP
+#endif  // KONAN_OBJC_INTEROP

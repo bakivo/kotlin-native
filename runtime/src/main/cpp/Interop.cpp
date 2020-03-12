@@ -15,8 +15,8 @@
  */
 
 #include <assert.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 
 #include "Alloc.h"
 #include "Memory.h"
@@ -41,5 +41,4 @@ OBJ_GETTER(Kotlin_Interop_derefStablePointer, KNativePtr pointer) {
   KRefSharedHolder* holder = reinterpret_cast<KRefSharedHolder*>(pointer);
   RETURN_OBJ(holder->ref());
 }
-
 }

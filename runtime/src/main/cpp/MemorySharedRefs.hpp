@@ -1,6 +1,6 @@
 /*
- * Copyright 2010-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license
- * that can be found in the LICENSE file.
+ * Copyright 2010-2019 JetBrains s.r.o. Use of this source code is governed by
+ * the Apache 2.0 license that can be found in the LICENSE file.
  */
 
 #ifndef RUNTIME_MEMORYSHAREDREFS_HPP
@@ -38,7 +38,7 @@ class BackRefFromAssociatedObject {
   ObjHeader* ref() const;
 
   inline bool permanent() const {
-    return obj_->permanent(); // Safe to query from any thread.
+    return obj_->permanent();  // Safe to query from any thread.
   }
 
  private:
@@ -49,4 +49,4 @@ class BackRefFromAssociatedObject {
   void ensureRefAccessible() const;
 };
 
-#endif // RUNTIME_MEMORYSHAREDREFS_HPP
+#endif  // RUNTIME_MEMORYSHAREDREFS_HPP

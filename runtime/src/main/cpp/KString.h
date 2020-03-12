@@ -19,8 +19,8 @@
 
 #include "Common.h"
 #include "Memory.h"
-#include "Types.h"
 #include "TypeInfo.h"
+#include "Types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,4 +54,4 @@ int binarySearchRange(const T* array, int arrayLength, T needle) {
   return middle - (needle < value ? 1 : 0);
 }
 
-#endif // RUNTIME_KSTRING_H
+#endif  // RUNTIME_KSTRING_H

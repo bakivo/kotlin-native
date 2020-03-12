@@ -18,11 +18,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "KAssert.h"
 #include "Exceptions.h"
+#include "KAssert.h"
+#include "KString.h"
 #include "Memory.h"
 #include "Natives.h"
-#include "KString.h"
 #include "Porting.h"
 #include "Types.h"
 
@@ -37,14 +37,15 @@ char int_to_digit(uint32_t value) {
 }
 
 // Radix is checked on the Kotlin side.
-template <typename T> OBJ_GETTER(Kotlin_toStringRadix, T value, KInt radix) {
+template <typename T>
+OBJ_GETTER(Kotlin_toStringRadix, T value, KInt radix) {
   if (value == 0) {
     RETURN_RESULT_OF(CreateStringFromCString, "0");
   }
   // In the worst case, we convert to binary, with sign.
   char cstring[sizeof(T) * CHAR_BIT + 2];
   bool negative = (value < 0);
-  if  (!negative) {
+  if (!negative) {
     value = -value;
   }
 
@@ -76,7 +77,8 @@ OBJ_GETTER(Kotlin_Byte_toString, KByte value) {
 }
 
 OBJ_GETTER(Kotlin_Char_toString, KChar value) {
-  ArrayHeader* result = AllocArrayInstance(theStringTypeInfo, 1, OBJ_RESULT)->array();
+  ArrayHeader* result =
+      AllocArrayInstance(theStringTypeInfo, 1, OBJ_RESULT)->array();
   *CharArrayAddressOfElementAt(result, 0) = value;
   RETURN_OBJ(result->obj());
 }
@@ -93,21 +95,21 @@ OBJ_GETTER(Kotlin_Int_toString, KInt value) {
   RETURN_RESULT_OF(CreateStringFromCString, cstring);
 }
 
-OBJ_GETTER(Kotlin_Int_toStringRadix, KInt value, KInt radix) {
-  RETURN_RESULT_OF(Kotlin_toStringRadix<KInt>, value, radix)
-}
+OBJ_GETTER(Kotlin_Int_toStringRadix, KInt value, KInt radix){
+    RETURN_RESULT_OF(Kotlin_toStringRadix<KInt>, value, radix)}
 
 OBJ_GETTER(Kotlin_Long_toString, KLong value) {
   char cstring[32];
-  konan::snprintf(cstring, sizeof(cstring), "%lld", static_cast<long long>(value));
+  konan::snprintf(cstring, sizeof(cstring), "%lld",
+                  static_cast<long long>(value));
   RETURN_RESULT_OF(CreateStringFromCString, cstring);
 }
 
-OBJ_GETTER(Kotlin_Long_toStringRadix, KLong value, KInt radix) {
-  RETURN_RESULT_OF(Kotlin_toStringRadix<KLong>, value, radix)
-}
+OBJ_GETTER(Kotlin_Long_toStringRadix, KLong value, KInt radix){
+    RETURN_RESULT_OF(Kotlin_toStringRadix<KLong>, value, radix)}
 
-OBJ_GETTER(Kotlin_DurationValue_formatToExactDecimals, KDouble value, KInt decimals) {
+OBJ_GETTER(Kotlin_DurationValue_formatToExactDecimals, KDouble value,
+           KInt decimals) {
   char cstring[32];
   konan::snprintf(cstring, sizeof(cstring), "%.*f", decimals, value);
   RETURN_RESULT_OF(CreateStringFromCString, cstring)
@@ -119,4 +121,4 @@ OBJ_GETTER(Kotlin_DurationValue_formatScientificImpl, KDouble value) {
   RETURN_RESULT_OF(CreateStringFromCString, cstring)
 }
 
-} // extern "C"
+}  // extern "C"

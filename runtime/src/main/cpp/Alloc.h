@@ -33,18 +33,18 @@ inline void konanFreeMemory(void* memory) {
   konan::free(memory);
 }
 
-template<typename T>
+template <typename T>
 inline T* konanAllocArray(size_t length) {
   return reinterpret_cast<T*>(konanAllocMemory(length * sizeof(T)));
 }
 
-template <typename T, typename ...A>
-inline T* konanConstructInstance(A&& ...args) {
+template <typename T, typename... A>
+inline T* konanConstructInstance(A&&... args) {
   return new (konanAllocMemory(sizeof(T))) T(::std::forward<A>(args)...);
 }
 
-template <typename T, typename ...A>
-inline T* konanConstructSizedInstance(size_t size, A&& ...args) {
+template <typename T, typename... A>
+inline T* konanConstructSizedInstance(size_t size, A&&... args) {
   return new (konanAllocMemory(size)) T(::std::forward<A>(args)...);
 }
 
@@ -54,7 +54,8 @@ inline void konanDestructInstance(T* instance) {
   konanFreeMemory(instance);
 }
 
-template <class T> class KonanAllocator {
+template <class T>
+class KonanAllocator {
  public:
   typedef size_t size_type;
   typedef ptrdiff_t difference_type;
@@ -67,25 +68,26 @@ template <class T> class KonanAllocator {
   KonanAllocator() {}
   KonanAllocator(const KonanAllocator&) {}
 
-  pointer allocate(size_type n, const void * = 0) {
+  pointer allocate(size_type n, const void* = 0) {
     return reinterpret_cast<T*>(konanAllocMemory(n * sizeof(T)));
   }
 
   void deallocate(void* p, size_type) {
-    if (p != nullptr) konanFreeMemory(p);
+    if (p != nullptr)
+      konanFreeMemory(p);
   }
 
   pointer address(reference x) const { return &x; }
 
   const_pointer address(const_reference x) const { return &x; }
 
-  KonanAllocator<T>&  operator=(const KonanAllocator&) { return *this; }
+  KonanAllocator<T>& operator=(const KonanAllocator&) { return *this; }
 
-  void construct(pointer p, const T& val) { new ((T*) p) T(val); }
+  void construct(pointer p, const T& val) { new ((T*)p) T(val); }
 
   // C++-11 wants that.
-  template <class U, class ...A>
-  void construct(U* const p, A&& ...args) {
+  template <class U, class... A>
+  void construct(U* const p, A&&... args) {
     new (p) U(::std::forward<A>(args)...);
   }
 
@@ -94,25 +96,28 @@ template <class T> class KonanAllocator {
   size_type max_size() const { return size_t(-1); }
 
   template <class U>
-  struct rebind { typedef KonanAllocator<U> other; };
+  struct rebind {
+    typedef KonanAllocator<U> other;
+  };
 
   template <class U>
   KonanAllocator(const KonanAllocator<U>&) {}
 
   template <class U>
-  KonanAllocator& operator=(const KonanAllocator<U>&) { return *this; }
+  KonanAllocator& operator=(const KonanAllocator<U>&) {
+    return *this;
+  }
 };
 
 template <class T, class U>
-bool operator==(
-  KonanAllocator<T> const&, KonanAllocator<U> const&) noexcept {
-    return true;
+bool operator==(KonanAllocator<T> const&, KonanAllocator<U> const&) noexcept {
+  return true;
 }
 
 template <class T, class U>
-bool operator!=(
-  KonanAllocator<T> const& x, KonanAllocator<U> const& y) noexcept {
-    return !(x == y);
+bool operator!=(KonanAllocator<T> const& x,
+                KonanAllocator<U> const& y) noexcept {
+  return !(x == y);
 }
 
-#endif // RUNTIME_ALLOC_H
+#endif  // RUNTIME_ALLOC_H

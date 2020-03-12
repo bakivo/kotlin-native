@@ -17,8 +17,8 @@
 #ifndef RUNTIME_NATIVES_H
 #define RUNTIME_NATIVES_H
 
-#include "Types.h"
 #include "Exceptions.h"
+#include "Types.h"
 
 constexpr size_t alignUp(size_t size, size_t alignment) {
   return (size + alignment - 1) & ~(alignment - 1);
@@ -26,13 +26,15 @@ constexpr size_t alignUp(size_t size, size_t alignment) {
 
 template <typename T>
 inline T* AddressOfElementAt(ArrayHeader* obj, KInt index) {
-  int8_t* body = reinterpret_cast<int8_t*>(obj) + alignUp(sizeof(ArrayHeader), alignof(T));
+  int8_t* body =
+      reinterpret_cast<int8_t*>(obj) + alignUp(sizeof(ArrayHeader), alignof(T));
   return reinterpret_cast<T*>(body) + index;
 }
 
 template <typename T>
 inline const T* AddressOfElementAt(const ArrayHeader* obj, KInt index) {
-  const int8_t* body = reinterpret_cast<const int8_t*>(obj) + alignUp(sizeof(ArrayHeader), alignof(T));
+  const int8_t* body = reinterpret_cast<const int8_t*>(obj) +
+                       alignUp(sizeof(ArrayHeader), alignof(T));
   return reinterpret_cast<const T*>(body) + index;
 }
 
@@ -41,7 +43,8 @@ inline KByte* ByteArrayAddressOfElementAt(ArrayHeader* obj, KInt index) {
   return AddressOfElementAt<KByte>(obj, index);
 }
 
-inline const KByte* ByteArrayAddressOfElementAt(const ArrayHeader* obj, KInt index) {
+inline const KByte* ByteArrayAddressOfElementAt(const ArrayHeader* obj,
+                                                KInt index) {
   return AddressOfElementAt<KByte>(obj, index);
 }
 
@@ -49,7 +52,8 @@ inline KChar* CharArrayAddressOfElementAt(ArrayHeader* obj, KInt index) {
   return AddressOfElementAt<KChar>(obj, index);
 }
 
-inline const KChar* CharArrayAddressOfElementAt(const ArrayHeader* obj, KInt index) {
+inline const KChar* CharArrayAddressOfElementAt(const ArrayHeader* obj,
+                                                KInt index) {
   return AddressOfElementAt<KChar>(obj, index);
 }
 
@@ -57,7 +61,8 @@ inline KInt* IntArrayAddressOfElementAt(ArrayHeader* obj, KInt index) {
   return AddressOfElementAt<KInt>(obj, index);
 }
 
-inline const KInt* IntArrayAddressOfElementAt(const ArrayHeader* obj, KInt index) {
+inline const KInt* IntArrayAddressOfElementAt(const ArrayHeader* obj,
+                                              KInt index) {
   return AddressOfElementAt<KInt>(obj, index);
 }
 
@@ -68,7 +73,8 @@ inline T* PrimitiveArrayAddressOfElementAt(ArrayHeader* obj, KInt index) {
 }
 
 template <typename T>
-inline const T* PrimitiveArrayAddressOfElementAt(const ArrayHeader* obj, KInt index) {
+inline const T* PrimitiveArrayAddressOfElementAt(const ArrayHeader* obj,
+                                                 KInt index) {
   return AddressOfElementAt<T>(obj, index);
 }
 
@@ -93,4 +99,4 @@ KNativePtr Kotlin_NativePtrArray_get(KConstRef thiz, KInt index);
 }
 #endif
 
-#endif // RUNTIME_NATIVES_H
+#endif  // RUNTIME_NATIVES_H

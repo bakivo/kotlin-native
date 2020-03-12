@@ -39,4 +39,4 @@
 #define KONAN_TYPE_INFO_HAS_WRITABLE_PART 1
 #endif
 
-#endif // RUNTIME_COMMON_H
+#endif  // RUNTIME_COMMON_H

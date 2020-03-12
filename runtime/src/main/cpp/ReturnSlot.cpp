@@ -17,7 +17,7 @@
 #include "ReturnSlot.h"
 
 #ifdef KONAN_WASM
-namespace  {
+namespace {
 
 THREAD_LOCAL_VARIABLE long long storage;
 

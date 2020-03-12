@@ -1,6 +1,6 @@
 /*
- * Copyright 2010-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license
- * that can be found in the LICENSE file.
+ * Copyright 2010-2019 JetBrains s.r.o. Use of this source code is governed by
+ * the Apache 2.0 license that can be found in the LICENSE file.
  */
 
 #ifndef RUNTIME_OBJCEXPORTINIT_H
@@ -10,6 +10,6 @@
 
 extern "C" void Kotlin_ObjCExport_initialize(void);
 
-#endif // KONAN_OBJC_INTEROP
+#endif  // KONAN_OBJC_INTEROP
 
-#endif // RUNTIME_OBJCEXPORTINIT_H
+#endif  // RUNTIME_OBJCEXPORTINIT_H

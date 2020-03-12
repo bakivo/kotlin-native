@@ -31,7 +31,7 @@ typedef union {
   KFloat f;
 } FloatAlias;
 
-}
+}  // namespace
 
 inline KDouble bitsToDouble(KLong bits) {
   DoubleAlias alias;
@@ -60,4 +60,4 @@ inline KInt floatToBits(KFloat value) {
 extern "C" KInt doubleUpper(KDouble value);
 extern "C" KInt doubleLower(KDouble value);
 
-#endif // RUNTIME_DOUBLECONVERSIONS_H
+#endif  // RUNTIME_DOUBLECONVERSIONS_H

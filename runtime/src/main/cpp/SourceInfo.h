@@ -15,9 +15,9 @@
  */
 
 struct SourceInfo {
-    const char* fileName;
-    int lineNumber;
-    int column;
+  const char* fileName;
+  int lineNumber;
+  int column;
 };
 
 #ifdef __cplusplus
@@ -27,5 +27,5 @@ extern "C" {
 struct SourceInfo Kotlin_getSourceInfo(void* addr);
 
 #ifdef __cplusplus
-} // extern "C"
+}  // extern "C"
 #endif

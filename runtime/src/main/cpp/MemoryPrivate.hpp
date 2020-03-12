@@ -42,4 +42,4 @@ void AdoptReferenceFromSharedVariable(ObjHeader* object);
 
 }  // extern "C"
 
-#endif // RUNTIME_MEMORYPRIVATE_HPP
+#endif  // RUNTIME_MEMORYPRIVATE_HPP

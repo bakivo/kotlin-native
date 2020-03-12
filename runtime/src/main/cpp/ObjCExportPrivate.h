@@ -1,6 +1,6 @@
 /*
- * Copyright 2010-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license
- * that can be found in the LICENSE file.
+ * Copyright 2010-2019 JetBrains s.r.o. Use of this source code is governed by
+ * the Apache 2.0 license that can be found in the LICENSE file.
  */
 
 #ifndef RUNTIME_OBJCEXPORTPRIVATE_H
@@ -10,13 +10,13 @@
 
 #import <objc/runtime.h>
 
-#import "Types.h"
 #import "Memory.h"
 #import "ObjCExport.h"
+#import "Types.h"
 
 @interface KotlinBase : NSObject <NSCopying>
-+(instancetype)createWrapper:(ObjHeader*)obj;
-@end;
++ (instancetype)createWrapper:(ObjHeader*)obj;
+@end
 
 extern "C" void Kotlin_ObjCExport_initializeClass(Class clazz);
 extern "C" const TypeInfo* Kotlin_ObjCExport_getAssociatedTypeInfo(Class clazz);
@@ -24,6 +24,6 @@ extern "C" OBJ_GETTER(Kotlin_ObjCExport_convertUnmappedObjCObject, id obj);
 extern "C" SEL Kotlin_ObjCExport_toKotlinSelector;
 extern "C" SEL Kotlin_ObjCExport_releaseAsAssociatedObjectSelector;
 
-#endif // KONAN_OBJC_INTEROP
+#endif  // KONAN_OBJC_INTEROP
 
-#endif // RUNTIME_OBJCEXPORTPRIVATE_H
+#endif  // RUNTIME_OBJCEXPORTPRIVATE_H

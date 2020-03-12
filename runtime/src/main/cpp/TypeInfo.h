@@ -33,13 +33,15 @@ struct AssociatedObjectTableRecord;
 // For systems where introspection is not needed - only open methods are in
 // this table.
 struct MethodTableRecord {
-    MethodNameHash nameSignature_;
-    void* methodEntryPoint_;
+  MethodNameHash nameSignature_;
+  void* methodEntryPoint_;
 };
 
 // Type for runtime representation of Konan object.
 // Keep in sync with runtimeTypeMap in RTTIGenerator.
 enum Konan_RuntimeType {
+  // TODO: Remove when clang-format learns to align such enums.
+  // clang-format off
   RT_INVALID    = 0,
   RT_OBJECT     = 1,
   RT_INT8       = 2,
@@ -51,12 +53,13 @@ enum Konan_RuntimeType {
   RT_NATIVE_PTR = 8,
   RT_BOOLEAN    = 9,
   RT_VECTOR128  = 10
+  // clang-format on
 };
 
 // Flags per type.
 enum Konan_TypeFlags {
   TF_IMMUTABLE = 1 << 0,
-  TF_ACYCLIC   = 1 << 1,
+  TF_ACYCLIC = 1 << 1,
   TF_INTERFACE = 1 << 2,
   TF_OBJC_DYNAMIC = 1 << 3,
   TF_LEAK_DETECTOR_CANDIDATE = 1 << 4
@@ -91,69 +94,71 @@ typedef int32_t ClassId;
 const ClassId kInvalidInterfaceId = 0;
 
 struct InterfaceTableRecord {
-    ClassId id;
-    uint32_t vtableSize;
-    VTableElement const* vtable;
+  ClassId id;
+  uint32_t vtableSize;
+  VTableElement const* vtable;
 };
 
-// This struct represents runtime type information and by itself is the compile time
-// constant.
+// This struct represents runtime type information and by itself is the compile
+// time constant.
 struct TypeInfo {
-    // Reference to self, to allow simple obtaining TypeInfo via meta-object.
-    const TypeInfo* typeInfo_;
-    // Extended RTTI, to retain cross-version debuggability, since ABI version 5 shall always be at the second position.
-    const ExtendedTypeInfo* extendedInfo_;
-    // ABI version.
-    uint32_t abiVersion_;
-    // Negative value marks array class/string, and it is negated element size.
-    int32_t instanceSize_;
-    // Must be pointer to Any for array classes, and null for Any.
-    const TypeInfo* superType_;
-    // All object reference fields inside this object.
-    const int32_t* objOffsets_;
-    // Count of object reference fields inside this object.
-    // 1 for kotlin.Array to mark it as non-leaf.
-    int32_t objOffsetsCount_;
-    const TypeInfo* const* implementedInterfaces_;
-    int32_t implementedInterfacesCount_;
-    // Null for abstract classes and interfaces.
-    const MethodTableRecord* openMethods_;
-    uint32_t openMethodsCount_;
-    int32_t interfaceTableSize_;
-    InterfaceTableRecord const* interfaceTable_;
+  // Reference to self, to allow simple obtaining TypeInfo via meta-object.
+  const TypeInfo* typeInfo_;
+  // Extended RTTI, to retain cross-version debuggability, since ABI version 5
+  // shall always be at the second position.
+  const ExtendedTypeInfo* extendedInfo_;
+  // ABI version.
+  uint32_t abiVersion_;
+  // Negative value marks array class/string, and it is negated element size.
+  int32_t instanceSize_;
+  // Must be pointer to Any for array classes, and null for Any.
+  const TypeInfo* superType_;
+  // All object reference fields inside this object.
+  const int32_t* objOffsets_;
+  // Count of object reference fields inside this object.
+  // 1 for kotlin.Array to mark it as non-leaf.
+  int32_t objOffsetsCount_;
+  const TypeInfo* const* implementedInterfaces_;
+  int32_t implementedInterfacesCount_;
+  // Null for abstract classes and interfaces.
+  const MethodTableRecord* openMethods_;
+  uint32_t openMethodsCount_;
+  int32_t interfaceTableSize_;
+  InterfaceTableRecord const* interfaceTable_;
 
-    // String for the fully qualified dot-separated name of the package containing class,
-    // or `null` if the class is local or anonymous.
-    ObjHeader* packageName_;
+  // String for the fully qualified dot-separated name of the package containing
+  // class, or `null` if the class is local or anonymous.
+  ObjHeader* packageName_;
 
-    // String for the qualified class name relative to the containing package
-    // (e.g. TopLevel.Nested1.Nested2), or simple class name if it is local,
-    // or `null` if the class is anonymous.
-    ObjHeader* relativeName_;
+  // String for the qualified class name relative to the containing package
+  // (e.g. TopLevel.Nested1.Nested2), or simple class name if it is local,
+  // or `null` if the class is anonymous.
+  ObjHeader* relativeName_;
 
-    // Various flags.
-    int32_t flags_;
+  // Various flags.
+  int32_t flags_;
 
-    // Class id built with the whole class hierarchy taken into account. The details are in ClassLayoutBuilder.
-    ClassId classId_;
+  // Class id built with the whole class hierarchy taken into account. The
+  // details are in ClassLayoutBuilder.
+  ClassId classId_;
 
 #if KONAN_TYPE_INFO_HAS_WRITABLE_PART
-    WritableTypeInfo* writableInfo_;
+  WritableTypeInfo* writableInfo_;
 #endif
 
-    // Null-terminated array.
-    const AssociatedObjectTableRecord* associatedObjects;
+  // Null-terminated array.
+  const AssociatedObjectTableRecord* associatedObjects;
 
-    // vtable starts just after declared contents of the TypeInfo:
-    // void* const vtable_[];
+  // vtable starts just after declared contents of the TypeInfo:
+  // void* const vtable_[];
 #ifdef __cplusplus
-    inline VTableElement const* vtable() const {
-      return reinterpret_cast<VTableElement const*>(this + 1);
-    }
+  inline VTableElement const* vtable() const {
+    return reinterpret_cast<VTableElement const*>(this + 1);
+  }
 
-    inline VTableElement* vtable() {
-      return reinterpret_cast<VTableElement*>(this + 1);
-    }
+  inline VTableElement* vtable() {
+    return reinterpret_cast<VTableElement*>(this + 1);
+  }
 #endif
 };
 
@@ -166,13 +171,15 @@ extern "C" {
 // to be safe, as actual result of this computation depends only on 'type_info'
 // and 'hash' numeric values and doesn't really depends on global memory state
 // (as TypeInfo is compile time constant and type info pointers are stable).
-void* LookupOpenMethod(const TypeInfo* info, MethodNameHash nameSignature) RUNTIME_CONST;
+void* LookupOpenMethod(const TypeInfo* info,
+                       MethodNameHash nameSignature) RUNTIME_CONST;
 
-InterfaceTableRecord const* LookupInterfaceTableRecord(InterfaceTableRecord const* interfaceTable,
-                                                       int interfaceTableSize, ClassId interfaceId) RUNTIME_CONST;
+InterfaceTableRecord const* LookupInterfaceTableRecord(
+    InterfaceTableRecord const* interfaceTable, int interfaceTableSize,
+    ClassId interfaceId) RUNTIME_CONST;
 
 #ifdef __cplusplus
-} // extern "C"
+}  // extern "C"
 #endif
 
-#endif // RUNTIME_TYPEINFO_H
+#endif  // RUNTIME_TYPEINFO_H

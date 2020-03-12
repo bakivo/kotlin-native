@@ -21,9 +21,10 @@ void RuntimeAssertFailed(const char* location, const char* message) {
   // TODO: produce stacktrace and such.
   char buf[1024];
   if (location != nullptr)
-      konan::snprintf(buf, sizeof(buf), "%s: runtime assert: %s\n", location, message);
+    konan::snprintf(buf, sizeof(buf), "%s: runtime assert: %s\n", location,
+                    message);
   else
-      konan::snprintf(buf, sizeof(buf), "runtime assert: %s\n", message);
+    konan::snprintf(buf, sizeof(buf), "runtime assert: %s\n", message);
   konan::consoleErrorUtf8(buf, konan::strnlen(buf, sizeof(buf)));
   konan::abort();
 }

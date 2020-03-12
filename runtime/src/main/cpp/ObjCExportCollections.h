@@ -19,15 +19,16 @@
 
 #if KONAN_OBJC_INTEROP
 
-#import <objc/runtime.h>
 #import <Foundation/NSNull.h>
+#import <objc/runtime.h>
 
 #import "Memory.h"
 #import "ObjCExport.h"
 #import "Runtime.h"
 
-// Objective-C collections can't store `nil`, and the common convention is to use `NSNull.null` instead.
-// Follow the convention when converting Kotlin `null`:
+// Objective-C collections can't store `nil`, and the common convention is to
+// use `NSNull.null` instead. Follow the convention when converting Kotlin
+// `null`:
 
 static inline id refToObjCOrNSNull(KRef obj) {
   if (obj == nullptr) {
@@ -45,7 +46,8 @@ static inline OBJ_GETTER(refFromObjCOrNSNull, id obj) {
   }
 }
 
-static inline OBJ_GETTER(invokeAndAssociate, KRef (*func)(KRef* result), id obj) {
+static inline OBJ_GETTER(invokeAndAssociate, KRef (*func)(KRef* result),
+                         id obj) {
   Kotlin_initRuntimeIfNeeded();
 
   KRef kotlinObj = func(OBJ_RESULT);
@@ -55,5 +57,5 @@ static inline OBJ_GETTER(invokeAndAssociate, KRef (*func)(KRef* result), id obj)
   return kotlinObj;
 }
 
-#endif // KONAN_OBJC_INTEROP
-#endif // RUNTIME_OBJCEXPORTCOLLECTIONS_H
+#endif  // KONAN_OBJC_INTEROP
+#endif  // RUNTIME_OBJCEXPORTCOLLECTIONS_H

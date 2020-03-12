@@ -8,6 +8,6 @@
 
 void ReportBacktraceToIosCrashLog(KRef throwable);
 
-#endif // KONAN_REPORT_BACKTRACE_TO_IOS_CRASH_LOG
+#endif  // KONAN_REPORT_BACKTRACE_TO_IOS_CRASH_LOG
 
-#endif // RUNTIME_OBJCEXCEPTIONS_H
+#endif  // RUNTIME_OBJCEXCEPTIONS_H

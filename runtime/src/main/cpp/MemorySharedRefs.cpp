@@ -1,11 +1,11 @@
 /*
- * Copyright 2010-2019 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license
- * that can be found in the LICENSE file.
+ * Copyright 2010-2019 JetBrains s.r.o. Use of this source code is governed by
+ * the Apache 2.0 license that can be found in the LICENSE file.
  */
 
+#include "MemorySharedRefs.hpp"
 #include "Exceptions.h"
 #include "MemoryPrivate.hpp"
-#include "MemorySharedRefs.hpp"
 #include "Runtime.h"
 
 void KRefSharedHolder::initLocal(ObjHeader* obj) {
@@ -26,24 +26,28 @@ ObjHeader* KRefSharedHolder::ref() const {
   return obj_;
 }
 
-static inline void ensureForeignRefAccessible(ObjHeader* object, ForeignRefContext context) {
+static inline void ensureForeignRefAccessible(ObjHeader* object,
+                                              ForeignRefContext context) {
   if (!Kotlin_hasRuntime()) {
     // So the object is either unowned or shared.
-    // In the former case initialized runtime is required to throw the exception below,
-    // in the latter case -- to provide proper execution context for caller.
+    // In the former case initialized runtime is required to throw the exception
+    // below, in the latter case -- to provide proper execution context for
+    // caller.
     Kotlin_initRuntimeIfNeeded();
   }
 
   if (!IsForeignRefAccessible(object, context)) {
     // TODO: add some info about the context.
-    // Note: retrieving 'type_info()' is supposed to be correct even for unowned object.
+    // Note: retrieving 'type_info()' is supposed to be correct even for unowned
+    // object.
     ThrowIllegalObjectSharingException(object->type_info(), object);
   }
 }
 
 void KRefSharedHolder::dispose() const {
   if (obj_ == nullptr) {
-    // To handle the case when it is not initialized. See [KotlinMutableSet/Dictionary dealloc].
+    // To handle the case when it is not initialized. See
+    // [KotlinMutableSet/Dictionary dealloc].
     return;
   }
 
@@ -65,9 +69,9 @@ void BackRefFromAssociatedObject::initAndAddRef(ObjHeader* obj) {
 
 void BackRefFromAssociatedObject::addRef() {
   if (atomicAdd(&refCount, 1) == 1) {
-    // There are no references to the associated object itself, so Kotlin object is being passed from Kotlin,
-    // and it is owned therefore.
-    ensureRefAccessible(); // TODO: consider removing explicit verification.
+    // There are no references to the associated object itself, so Kotlin object
+    // is being passed from Kotlin, and it is owned therefore.
+    ensureRefAccessible();  // TODO: consider removing explicit verification.
 
     // Foreign reference has already been deinitialized (see [releaseRef]).
     // Create a new one:
@@ -80,9 +84,10 @@ bool BackRefFromAssociatedObject::tryAddRef() {
   this->ensureRefAccessible();
   ObjHeader* obj = this->obj_;
 
-  if (!TryAddHeapRef(obj)) return false;
+  if (!TryAddHeapRef(obj))
+    return false;
   this->addRef();
-  ReleaseHeapRef(obj); // Balance TryAddHeapRef.
+  ReleaseHeapRef(obj);  // Balance TryAddHeapRef.
   // TODO: consider optimizing for non-shared objects.
 
   return true;
@@ -91,8 +96,8 @@ bool BackRefFromAssociatedObject::tryAddRef() {
 void BackRefFromAssociatedObject::releaseRef() {
   ForeignRefContext context = context_;
   if (atomicAdd(&refCount, -1) == 0) {
-    // Note: by this moment "subsequent" addRef may have already happened and patched context_.
-    // So use the value loaded before refCount update:
+    // Note: by this moment "subsequent" addRef may have already happened and
+    // patched context_. So use the value loaded before refCount update:
     DeinitForeignRef(obj_, context);
     // From this moment [context] is generally a dangling pointer.
     // This is handled in [IsForeignRefAccessible] and [addRef].
@@ -110,11 +115,13 @@ void BackRefFromAssociatedObject::ensureRefAccessible() const {
 }
 
 extern "C" {
-RUNTIME_NOTHROW void KRefSharedHolder_initLocal(KRefSharedHolder* holder, ObjHeader* obj) {
+RUNTIME_NOTHROW void KRefSharedHolder_initLocal(KRefSharedHolder* holder,
+                                                ObjHeader* obj) {
   holder->initLocal(obj);
 }
 
-RUNTIME_NOTHROW void KRefSharedHolder_init(KRefSharedHolder* holder, ObjHeader* obj) {
+RUNTIME_NOTHROW void KRefSharedHolder_init(KRefSharedHolder* holder,
+                                           ObjHeader* obj) {
   holder->init(obj);
 }
 
@@ -125,4 +132,4 @@ RUNTIME_NOTHROW void KRefSharedHolder_dispose(const KRefSharedHolder* holder) {
 ObjHeader* KRefSharedHolder_ref(const KRefSharedHolder* holder) {
   return holder->ref();
 }
-} // extern "C"
+}  // extern "C"

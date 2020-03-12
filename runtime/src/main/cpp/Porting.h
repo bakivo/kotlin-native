@@ -17,8 +17,8 @@
 #ifndef RUNTIME_PORTING_H
 #define RUNTIME_PORTING_H
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 #include "Common.h"
 
@@ -41,12 +41,12 @@ RUNTIME_NORETURN void exit(int32_t status);
 void onThreadExit(void (*destructor)(void*), void* destructorParameter);
 
 // String/byte operations.
-// memcpy/memmove/memcmp are not here intentionally, as frequently implemented/optimized
-// by C compiler.
-void* memmem(const void *big, size_t bigLen, const void *little, size_t littleLen);
+// memcpy/memmove/memcmp are not here intentionally, as frequently
+// implemented/optimized by C compiler.
+void* memmem(const void* big, size_t bigLen, const void* little,
+             size_t littleLen);
 int snprintf(char* buffer, size_t size, const char* format, ...);
 size_t strnlen(const char* buffer, size_t maxSize);
-
 
 // These functions should be marked with RUNTIME_USED attribute for wasm target
 // because clang replaces these operations with intrinsics that will be
@@ -60,16 +60,16 @@ RUNTIME_USED
 double pow(double x, double y);
 
 RUNTIME_USED
-void *memcpy(void *dst, const void *src, size_t n);
+void* memcpy(void* dst, const void* src, size_t n);
 
 RUNTIME_USED
-void *memmove(void *dst, const void *src, size_t len);
+void* memmove(void* dst, const void* src, size_t len);
 
 RUNTIME_USED
-int memcmp(const void *s1, const void *s2, size_t n);
+int memcmp(const void* s1, const void* s2, size_t n);
 
 RUNTIME_USED
-void *memset(void *b, int c, size_t len);
+void* memset(void* b, int c, size_t len);
 
 #endif
 }
@@ -84,13 +84,17 @@ uint64_t getTimeMicros();
 uint64_t getTimeNanos();
 
 #if KONAN_NO_EXCEPTIONS
-#define TRY_CATCH(tryAction, actionWithoutExceptions, catchAction) actionWithoutExceptions;
+#define TRY_CATCH(tryAction, actionWithoutExceptions, catchAction) \
+  actionWithoutExceptions;
 #else
 #define TRY_CATCH(tryAction, actionWithoutExceptions, catchAction) \
-do {                          \
-  try { tryAction; }          \
-  catch(...) { catchAction; } \
-} while(0)
+  do {                                                             \
+    try {                                                          \
+      tryAction;                                                   \
+    } catch (...) {                                                \
+      catchAction;                                                 \
+    }                                                              \
+  } while (0)
 #endif
 
 }  // namespace konan

@@ -44,29 +44,36 @@
 /**
  * Theory of operations:
  *
- * Kotlin/Native runtime has concurrent cyclic garbage collection for the shared mutable objects,
- * such as `AtomicReference` and `FreezableAtomicReference` instances (further known as the atomic rootset).
- * We perform such analysis by iterating over the transitive closure of the atomic rootset, and computing
- * aggregated inner reference counter for rootset elements over this transitive closure.
- * Collector runs in its own thread and is started by an explicit request or after certain time interval since last
- * collection passes, thus its operation does not affect UI responsiveness in most cases.
- * Atomic rootset is built by maintaining the set of all atomic and freezable atomic references objects.
- * Elements whose transitive closure inner reference count matches the actual reference count are ones
- * belonging to the garbage cycles and thus can be discarded.
- * We ignore elements reachable from objects having external references (i.e. inner rc != real rc).
- * If during computations of the aggregated RC there were modifications in the reference counts of
- * elements of the atomic rootset:
- *   - if it is being increased, then someone already got an external reference to this element, thus we may not
- *     end up matching the inner reference count anyway
- *   - if it is being decreased and object become garbage, it will be collected next time
- * If transitive closure of the atomic rootset mutates, it could only happen via changing the atomics references,
- * as all elements of this closure are frozen.
- * To handle such mutations we keep collector flag, which is cleared before analysis and set on every
- * atomic reference value update. If flag's value changes - collector restarts its analysis.
- * There are not so much of complications in this algorithm due to the delayed reference counting as if there's a
- * stack reference to the shared object - it's reflected in the reference counter (see rememberNewContainer()).
- * We release objects found by the collector on a rendezvouz callback, but not on the main thread,
- * to keep UI responsive, as taking GC lock can take time, sometimes.
+ * Kotlin/Native runtime has concurrent cyclic garbage collection for the shared
+ * mutable objects, such as `AtomicReference` and `FreezableAtomicReference`
+ * instances (further known as the atomic rootset). We perform such analysis by
+ * iterating over the transitive closure of the atomic rootset, and computing
+ * aggregated inner reference counter for rootset elements over this transitive
+ * closure. Collector runs in its own thread and is started by an explicit
+ * request or after certain time interval since last collection passes, thus its
+ * operation does not affect UI responsiveness in most cases. Atomic rootset is
+ * built by maintaining the set of all atomic and freezable atomic references
+ * objects. Elements whose transitive closure inner reference count matches the
+ * actual reference count are ones belonging to the garbage cycles and thus can
+ * be discarded. We ignore elements reachable from objects having external
+ * references (i.e. inner rc != real rc). If during computations of the
+ * aggregated RC there were modifications in the reference counts of elements of
+ * the atomic rootset:
+ *   - if it is being increased, then someone already got an external reference
+ *     to this element, thus we may not end up matching the inner reference
+ *     count anyway
+ *   - if it is being decreased and object become garbage, it will be collected
+ *     next time
+ * If transitive closure of the atomic rootset mutates, it could only
+ * happen via changing the atomics references, as all elements of this closure
+ * are frozen. To handle such mutations we keep collector flag, which is cleared
+ * before analysis and set on every atomic reference value update. If flag's
+ * value changes - collector restarts its analysis. There are not so much of
+ * complications in this algorithm due to the delayed reference counting as if
+ * there's a stack reference to the shared object - it's reflected in the
+ * reference counter (see rememberNewContainer()). We release objects found by
+ * the collector on a rendezvouz callback, but not on the main thread, to keep
+ * UI responsive, as taking GC lock can take time, sometimes.
  */
 namespace {
 
@@ -74,13 +81,9 @@ class Locker {
   pthread_mutex_t* lock_;
 
  public:
-  Locker(pthread_mutex_t* alock): lock_(alock) {
-    pthread_mutex_lock(lock_);
-  }
+  Locker(pthread_mutex_t* alock) : lock_(alock) { pthread_mutex_lock(lock_); }
 
-  ~Locker() {
-    pthread_mutex_unlock(lock_);
-  }
+  ~Locker() { pthread_mutex_unlock(lock_); }
 };
 
 template <typename func>
@@ -128,10 +131,14 @@ class CyclicCollector {
 
  public:
   CyclicCollector() {
-    CHECK_CALL(pthread_mutex_init(&lock_, nullptr), "Cannot init collector mutex")
-    CHECK_CALL(pthread_mutex_init(&timestampLock_, nullptr), "Cannot init collector timestamp mutex")
-    CHECK_CALL(pthread_cond_init(&cond_, nullptr), "Cannot init collector condition")
-    CHECK_CALL(pthread_create(&gcThread_, nullptr, gcWorkerRoutine, this), "Cannot start collector thread")
+    CHECK_CALL(pthread_mutex_init(&lock_, nullptr),
+               "Cannot init collector mutex")
+    CHECK_CALL(pthread_mutex_init(&timestampLock_, nullptr),
+               "Cannot init collector timestamp mutex")
+    CHECK_CALL(pthread_cond_init(&cond_, nullptr),
+               "Cannot init collector condition")
+    CHECK_CALL(pthread_create(&gcThread_, nullptr, gcWorkerRoutine, this),
+               "Cannot start collector thread")
   }
 
   void clear() {
@@ -144,11 +151,13 @@ class CyclicCollector {
     {
       Locker locker(&lock_);
       terminateCollector_ = true;
-      if (enabled) shallRunCollector_ = true;
+      if (enabled)
+        shallRunCollector_ = true;
       CHECK_CALL(pthread_cond_signal(&cond_), "Cannot signal collector")
     }
     // TODO: improve waiting for collector termination.
-    while (atomicGet(&terminateCollector_)) {}
+    while (atomicGet(&terminateCollector_)) {
+    }
     releasePendingUnlocked(nullptr);
   }
 
@@ -164,6 +173,8 @@ class CyclicCollector {
     return nullptr;
   }
 
+  // TODO: Format this code.
+  // clang-format off
   void gcProcessor() {
      {
        Locker locker(&lock_);
@@ -310,12 +321,14 @@ class CyclicCollector {
      }
      atomicSet(&terminateCollector_, false);
   }
+  // clang-format on
 
   void addWorker(void* worker) {
     suggestLockRelease();
     Locker lock(&lock_);
     currentAliveWorkers_++;
-    if (mainWorker_ == nullptr) mainWorker_ = worker;
+    if (mainWorker_ == nullptr)
+      mainWorker_ = worker;
   }
 
   void removeWorker(void* worker, bool enabled) {
@@ -331,8 +344,9 @@ class CyclicCollector {
 
   void addRoot(ObjHeader* obj) {
     COLLECTOR_LOG("add root %p\n", obj);
-    // TODO: we can only add root when collector is not processing, which looks like a limitation,
-    //  instead we can add elements to the side buffer or have a separate lock for that.
+    // TODO: we can only add root when collector is not processing, which looks
+    // like a limitation, instead we can add elements to the side buffer or have
+    // a separate lock for that.
     suggestLockRelease();
     Locker lock(&lock_);
     rootset_.insert(obj);
@@ -348,14 +362,13 @@ class CyclicCollector {
   }
 
   void mutateRoot(ObjHeader* newValue) {
-    // TODO: consider optimization, when clearing value (setting to null) in atomic reference shall not lead
+    // TODO: consider optimization, when clearing value (setting to null) in
+    // atomic reference shall not lead
     //   to invalidation of the collector analysis state.
     atomicSet(&mutatedAtomics_, 1);
   }
 
-  void suggestLockRelease() {
-    atomicSet(&mutatedAtomics_, 1);
-  }
+  void suggestLockRelease() { atomicSet(&mutatedAtomics_, 1); }
 
   bool checkIfShallCollect() {
     auto tick = atomicAdd(&currentTick_, 1);
@@ -380,15 +393,16 @@ class CyclicCollector {
   void releasePendingUnlocked(void* worker) {
     // We are not doing that on the UI thread, as taking lock is slow, unless
     // it happens on deinit of the collector or if there are no other workers.
-    if ((atomicGet(&pendingRelease_) != 0) && ((worker != mainWorker_) || (currentAliveWorkers_ == 1))) {
+    if ((atomicGet(&pendingRelease_) != 0) &&
+        ((worker != mainWorker_) || (currentAliveWorkers_ == 1))) {
       suggestLockRelease();
       Locker locker(&lock_);
-      COLLECTOR_LOG("clearing %d release candidates on %p\n", toRelease_.size(), worker);
-      for (auto* it: toRelease_) {
+      COLLECTOR_LOG("clearing %d release candidates on %p\n", toRelease_.size(),
+                    worker);
+      for (auto* it : toRelease_) {
         COLLECTOR_LOG("clear references in %p\n", it)
-        traverseObjectFields(it, [](ObjHeader** location) {
-          ZeroHeapRef(location);
-        });
+        traverseObjectFields(
+            it, [](ObjHeader** location) { ZeroHeapRef(location); });
       }
       toRelease_.clear();
       atomicSet(&pendingRelease_, 0);
@@ -396,7 +410,8 @@ class CyclicCollector {
   }
 
   void collectorCallaback(void* worker) {
-    if (atomicGet(&gcRunning_) != 0) return;
+    if (atomicGet(&gcRunning_) != 0)
+      return;
     releasePendingUnlocked(worker);
     if (checkIfShallCollect()) {
       Locker locker(&lock_);
@@ -406,7 +421,8 @@ class CyclicCollector {
   }
 
   void scheduleGarbageCollect() {
-    if (atomicGet(&gcRunning_) != 0) return;
+    if (atomicGet(&gcRunning_) != 0)
+      return;
     Locker lock(&lock_);
     shallRunCollector_ = true;
     CHECK_CALL(pthread_cond_signal(&cond_), "Cannot signal collector")
@@ -414,11 +430,11 @@ class CyclicCollector {
 
   void localGC() {
     // We just need to take GC lock here, to avoid release of object we walk on.
-    // TODO: consider optimization without taking the lock and just notifying collector via an atomic.
+    // TODO: consider optimization without taking the lock and just notifying
+    // collector via an atomic.
     suggestLockRelease();
     Locker locker(&lock_);
   }
-
 };
 
 CyclicCollector* cyclicCollector = nullptr;
@@ -440,10 +456,11 @@ void cyclicDeinit(bool enabled) {
   auto* local = cyclicCollector;
   local->terminate(enabled);
   cyclicCollector = nullptr;
-  // Workaround data race with threads non-atomically reading and then using [cyclicCollector].
+  // Workaround data race with threads non-atomically reading and then using
+  // [cyclicCollector].
   // konanDestructInstance(local);
-  // Note: memory leaks here indeed, but usually it happens once per application.
-  // Make best effort to clean some memory:
+  // Note: memory leaks here indeed, but usually it happens once per
+  // application. Make best effort to clean some memory:
   local->clear();
 #endif  // WITH_WORKERS
 }

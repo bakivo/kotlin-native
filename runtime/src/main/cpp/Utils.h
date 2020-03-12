@@ -39,13 +39,9 @@ class SimpleMutex {
 template <class Mutex>
 class LockGuard {
  public:
-  explicit LockGuard(Mutex& mutex_) : mutex(mutex_) {
-    mutex.lock();
-  }
+  explicit LockGuard(Mutex& mutex_) : mutex(mutex_) { mutex.lock(); }
 
-  ~LockGuard() {
-    mutex.unlock();
-  }
+  ~LockGuard() { mutex.unlock(); }
 
  private:
   Mutex& mutex;

@@ -61,9 +61,8 @@ void knjs__Math_max(KInt xUpper, KInt xLower, KInt yUpper, KInt yLower);
 void knjs__Math_min(KInt xUpper, KInt xLower, KInt yUpper, KInt yLower);
 
 void knjs__Math_pow(KInt xUpper, KInt xLower, KInt yUpper, KInt yLower);
-
 }
 
-#endif // KONAN_WASM
+#endif  // KONAN_WASM
 
-#endif // RUNTIME_KOTLINMATH_H
+#endif  // RUNTIME_KOTLINMATH_H

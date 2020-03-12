@@ -33,13 +33,14 @@ inline WeakReferenceCounter* asWeakReferenceCounter(ObjHeader* obj) {
 #if !KONAN_NO_THREADS
 
 inline void lock(int32_t* address) {
-    RuntimeAssert(*address == 0 || *address == 1, "Incorrect lock state");
-    while (__sync_val_compare_and_swap(address, 0, 1) == 1);
+  RuntimeAssert(*address == 0 || *address == 1, "Incorrect lock state");
+  while (__sync_val_compare_and_swap(address, 0, 1) == 1)
+    ;
 }
 
 inline void unlock(int32_t* address) {
-    int old = __sync_val_compare_and_swap(address, 1, 0);
-    RuntimeAssert(old == 1, "Incorrect lock state");
+  int old = __sync_val_compare_and_swap(address, 1, 0);
+  RuntimeAssert(old == 1, "Incorrect lock state");
 }
 
 #endif
@@ -65,13 +66,14 @@ OBJ_GETTER(Konan_getWeakReferenceImpl, ObjHeader* referred) {
   if (IsInstance(referred, theObjCObjectWrapperTypeInfo)) {
     RETURN_RESULT_OF(makeObjCWeakReferenceImpl, meta->associatedObject_);
   }
-#endif // KONAN_OBJC_INTEROP
+#endif  // KONAN_OBJC_INTEROP
 
   if (meta->WeakReference.counter_ == nullptr) {
-     ObjHolder counterHolder;
-     // Cast unneeded, just to emphasize we store an object reference as void*.
-     ObjHeader* counter = makeWeakReferenceCounter(reinterpret_cast<void*>(referred), counterHolder.slot());
-     UpdateHeapRefIfNull(&meta->WeakReference.counter_, counter);
+    ObjHolder counterHolder;
+    // Cast unneeded, just to emphasize we store an object reference as void*.
+    ObjHeader* counter = makeWeakReferenceCounter(
+        reinterpret_cast<void*>(referred), counterHolder.slot());
+    UpdateHeapRefIfNull(&meta->WeakReference.counter_, counter);
   }
   RETURN_OBJ(meta->WeakReference.counter_);
 }
@@ -83,7 +85,8 @@ OBJ_GETTER(Konan_WeakReferenceCounter_get, ObjHeader* counter) {
   RETURN_OBJ(*referredAddress);
 #else
   auto* weakCounter = asWeakReferenceCounter(counter);
-  RETURN_RESULT_OF(ReadHeapRefLocked, referredAddress,  &weakCounter->lock,  &weakCounter->cookie);
+  RETURN_RESULT_OF(ReadHeapRefLocked, referredAddress, &weakCounter->lock,
+                   &weakCounter->cookie);
 #endif
 }
 

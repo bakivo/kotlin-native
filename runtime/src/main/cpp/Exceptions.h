@@ -35,7 +35,8 @@ RUNTIME_NORETURN void TerminateWithUnhandledException(KRef exception);
 
 void SetKonanTerminateHandler();
 
-// The functions below are implemented in Kotlin (at package kotlin.native.internal).
+// The functions below are implemented in Kotlin (at package
+// kotlin.native.internal).
 
 // Throws null pointer exception. Context is evaluated from caller's address.
 void RUNTIME_NORETURN ThrowNullPointerException();
@@ -43,7 +44,8 @@ void RUNTIME_NORETURN ThrowNullPointerException();
 // Context is evaluated from caller's address.
 void RUNTIME_NORETURN ThrowArrayIndexOutOfBoundsException();
 // Throws class cast exception.
-void RUNTIME_NORETURN ThrowClassCastException(const ObjHeader* instance, const TypeInfo* type_info);
+void RUNTIME_NORETURN ThrowClassCastException(const ObjHeader* instance,
+                                              const TypeInfo* type_info);
 // Throws arithmetic exception.
 void RUNTIME_NORETURN ThrowArithmeticException();
 // Throws number format exception.
@@ -58,13 +60,14 @@ void RUNTIME_NORETURN ThrowIllegalArgumentException();
 void RUNTIME_NORETURN ThrowIllegalStateException();
 void RUNTIME_NORETURN ThrowInvalidMutabilityException(KConstRef where);
 void RUNTIME_NORETURN ThrowIncorrectDereferenceException();
-void RUNTIME_NORETURN ThrowIllegalObjectSharingException(KConstNativePtr typeInfo, KConstNativePtr address);
+void RUNTIME_NORETURN ThrowIllegalObjectSharingException(
+    KConstNativePtr typeInfo, KConstNativePtr address);
 void RUNTIME_NORETURN ThrowFreezingException(KRef toFreeze, KRef blocker);
 // Prints out message of Throwable.
 void PrintThrowable(KRef);
 
 #ifdef __cplusplus
-} // extern "C"
+}  // extern "C"
 #endif
 
-#endif // RUNTIME_NAMES_H
+#endif  // RUNTIME_NAMES_H

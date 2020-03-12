@@ -25,27 +25,29 @@
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 
-RUNTIME_NORETURN void RuntimeAssertFailed(const char* location, const char* message);
+RUNTIME_NORETURN void RuntimeAssertFailed(const char* location,
+                                          const char* message);
 
-// During codegeneration we set this constant to 1 or 0 to allow bitcode optimizer
-// to get rid of code behind condition.
+// During codegeneration we set this constant to 1 or 0 to allow bitcode
+// optimizer to get rid of code behind condition.
 extern "C" const int KonanNeedDebugInfo;
 
 #if KONAN_ENABLE_ASSERT
-// Use RuntimeAssert() in internal state checks, which could be ignored in production.
-#define RuntimeAssert(condition, message)                           \
-if (KonanNeedDebugInfo && (!(condition))) {                         \
-    RuntimeAssertFailed( __FILE__ ":" TOSTRING(__LINE__), message); \
-}
+// Use RuntimeAssert() in internal state checks, which could be ignored in
+// production.
+#define RuntimeAssert(condition, message)                          \
+  if (KonanNeedDebugInfo && (!(condition))) {                      \
+    RuntimeAssertFailed(__FILE__ ":" TOSTRING(__LINE__), message); \
+  }
 #else
 #define RuntimeAssert(condition, message)
 #endif
 
-// Use RuntimeCheck() in runtime checks that could fail due to external condition and shall lead
-// to program termination. Never compiled out.
+// Use RuntimeCheck() in runtime checks that could fail due to external
+// condition and shall lead to program termination. Never compiled out.
 #define RuntimeCheck(condition, message)   \
   if (!(condition)) {                      \
     RuntimeAssertFailed(nullptr, message); \
   }
 
-#endif // RUNTIME_ASSERT_H
+#endif  // RUNTIME_ASSERT_H
