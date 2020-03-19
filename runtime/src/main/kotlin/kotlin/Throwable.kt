@@ -169,7 +169,7 @@ public actual fun Throwable.addSuppressed(exception: Throwable) {
         val suppressed = suppressedExceptionsList
         when {
             suppressed == null -> suppressedExceptionsList = mutableListOf<Throwable>(exception)
-            suppressed.isFrozen -> suppressedExceptionsList = suppressed.toMutableList().also { add(exception) }
+            suppressed.isFrozen -> suppressedExceptionsList = suppressed.toMutableList().apply { add(exception) }
             else -> suppressed.add(exception)
         }
     }
