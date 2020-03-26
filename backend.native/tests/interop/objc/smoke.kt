@@ -36,6 +36,7 @@ fun run() {
     testCallableReferences()
     testMangling()
     testSharing()
+    testObjCWeakRef()
 
     assertEquals(2, ForwardDeclaredEnum.TWO.value)
 
@@ -563,6 +564,40 @@ fun testSharing() = withWorker {
     assertEquals(222, obj.x)
 
     // TODO: test [obj release] etc.
+}
+
+fun testObjCWeakRef() {
+    val deallocListener = DeallocListener()
+    assertFalse(deallocListener.deallocated)
+
+    testObjCWeakRef0(deallocListener)
+
+    kotlin.native.internal.GC.collect()
+    assertTrue(deallocListener.deallocated)
+    assertTrue(deallocListener.deallocExecutorIsNil())
+}
+
+fun testObjCWeakRef0(deallocListener: DeallocListener) = withWorker {
+    assertTrue(deallocListener.deallocExecutorIsNil())
+
+    val obj = object : DeallocExecutor() {}
+    deallocListener.deallocExecutor = obj
+    obj.deallocListener = deallocListener
+
+    assertFalse(deallocListener.deallocExecutorIsNil())
+
+//    TODO: can't actually test, Obj-C runtime doesn't expect _tryRetain throwing an exception.
+//    runInWorker {
+//        assertFailsWith<IncorrectDereferenceException> {
+//            deallocListener.deallocExecutorIsNil()
+//        }
+//    }
+
+    obj.freeze()
+
+    runInWorker {
+        assertFalse(deallocListener.deallocExecutorIsNil())
+    }
 }
 
 private fun Worker.runInWorker(block: () -> Unit) {
